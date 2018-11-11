@@ -23,15 +23,14 @@ int randomNum(int max, int min) {
 	return rand() % (max - min + 1) + min;
 }
 
-//random card test 1 which tests the adventurer card
+//random card test 1 which tests the smithy card
 int main() {
 	//seed the rand function
 	srand(time(0));
 	int i, j,l, loc,t1=-1,t2=-1,extras=0,difference =0,choice1 = -1, choice2 = -1, choice3 = -1, handPos = 0, bonus = 0,player,works=1,totalDeck,newT,oldT;
 	struct gameState G, preG;
 	int k[10] = {adventurer, embargo, village, minion, mine, cutpurse, sea_hag, tribute, smithy, council_room};
-	printf("\n\n****Testing Adventurer Card****\n\n");
-	//test cardEffect with from position 1-5 cards in player's hand
+	printf("\n\n****Testing Smithy Card****\n\n");
 	for(i = 0; i < 100000; i++) {
 		//max players are 4 so randomize 2-4 plaeyrs
 		G.numPlayers = randomNum(4,2);
@@ -88,75 +87,21 @@ int main() {
 		for(j=0;j<G.playedCardCount;j++) {
 			G.playedCards[j] = randomNum(26,0);
 		}
-		//calculate how many cards **Should** be discarded by adventurer because they are not treasure
-		//printf("CARDS IN HAND (TOP TO BOTTOM)\n");
-		t1 = -1;
-		t2 = -1;
-		//add non treasure card to hand to avoid duplicate deck values
-		for(j=G.deckCount[player]-1;j>=0;j--) {
-			
-			//printf("%d\n",G.deck[player][j]);
-			if(t1 == -1) {
-				if(G.deck[player][j] > 3 && G.deck[player][j] < 7) {
-					t1 = j;
-				}
-			}
-			else {
-				if(t2 == -1) {
-					if(G.deck[player][j] > 3 && G.deck[player][j] < 7) {
-						t2 = j;
-					}
-				}
-			}	 
-		}
-		if(t1 == -1) {
-			G.deck[player][2] = 4;
-		}
-		if(t2 == -1) {
-			G.deck[player][1] = 4;
-		}
-		//printf("Treasure at position %d, and %d\n",t1,t2);
-		extras = (G.deckCount[player]-t1) + (t1-t2-1);
-		//printf("Cards to be discarded: %d\n\n",extras);		
+		//copy game state over to constant	
 		memcpy(&preG,&G,sizeof(struct gameState));
-		cardEffect(adventurer,choice1,choice2,choice3,&G,loc,&bonus);
-		//draw 2 card
-		//compare current hand count - should be the 1 more (2 drawn, 1 discarded)
-		if(!asserttrue(G.handCount[player] == preG.handCount[player]+1, &works,&preG)) {
-			printf("Draw card error: Has %d cards when should have %d cards\n", G.handCount[player], preG.handCount[player]+1);
+		cardEffect(smithy,choice1,choice2,choice3,&G,loc,&bonus);
+		//compare current hand count - should have 2  more (3 drawn, 1 discarded)
+		if(!asserttrue(G.handCount[player] == preG.handCount[player]+2, &works,&preG)) {
+			printf("Draw card error: Has %d cards in hand when should have %d cards\n", G.handCount[player], preG.handCount[player]+2);
 		}
-		//Should have 2 additional treasure cards in hand
-		newT = 0;
-		oldT = 0;
-		for(j=0;j<G.handCount[player];j++) {
-			if(G.hand[player][j] == copper)
-				newT++;
-			if(G.hand[player][j] == silver)
-				newT++;
-			if(G.hand[player][j] == gold)
-				newT++;
+		//compare deck counts - should have 3 fewer
+		if(!asserttrue(G.deckCount[player] == preG.deckCount[player]-3,&works,&preG)) {
+			printf("Deck count error: Has %d cards in deck, should have %d\n",G.deckCount[player],preG.deckCount[player]-3);
 		}
-		for(j=0;j<preG.handCount[player];j++) {
-			if(preG.hand[player][j] == copper)
-				oldT++;
-			if(preG.hand[player][j] == silver)
-				oldT++;
-			if(preG.hand[player][j] == gold)
-				oldT++;
+		//smithy should be in played pile
+		if(!asserttrue(G.playedCardCount == preG.playedCardCount + 1,&works,&preG)) {
+			printf("Played card count not correct: Had %d, expected %d\n",G.playedCardCount,preG.playedCardCount+1);
 		}
-		if(!asserttrue(newT == oldT+2,&works,&preG)) {
-			printf("2 New Treasure Error: Old Total: %d New Total: %d\n",oldT,newT);
-		}
-		//discard should have adventurer as well as every drawn non treasure card (extras)
-		if(!asserttrue(G.discardCount[player] == preG.discardCount[player] + 1 + extras,&works,&preG)) {
-			printf("discard card error: Have: %d, Should Have: %d\n",G.discardCount[player],preG.discardCount[player] + 1 + extras);
-		}
-		for(j=0;j<G.discardCount[player];j++) {
-			if(!asserttrue(G.discard[player][j] != -1,&works,&preG)) {
-				printf("Error in discard pile - null result\n");
-			} 
-		}
-		
 		//other player had no status change
 		if(!asserttrue(G.handCount[player+1] == preG.handCount[player+1],&works,&preG)) {
 			printf("Error in other player gamestate: Hand Count\n");
